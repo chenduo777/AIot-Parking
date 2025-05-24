@@ -3,7 +3,8 @@ import time
 from pathlib import Path
 import os
 import re
-import pyodbc
+import requests
+import json
 
 import cv2
 import torch
@@ -31,6 +32,10 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized,
 
 webcam_2 = 0
 F_subprocess = 1
+
+# API 設定 - 支援環境變數或直接設定
+API_URL = os.environ.get('API_URL', 'https://parking-management-api.onrender.com/api/parking/update')
+print(f"使用 API 網址: {API_URL}")
 
 class Car:
     def __init__(self, number_plate, color, has_parking):
@@ -75,60 +80,37 @@ recognition_results = [
     }
 ]
 
-# 連接 SQL Server 資料庫
-
-conn = pyodbc.connect(
-    driver='{ODBC Driver 18 for SQL Server}',
-    server='192.168.193.146',
-    database='JackyMSSQL',
-    user='yolo',
-    password='1qazXSW@',
-    as_dict=True,
-    charset='UTF-8',  # 指定字符集为 UTF-8
-    sslmode='disable',   # 禁用 SSL 验证
-    TrustServerCertificate='yes'  # 信任服务器提供的证书
-)
-
-# 創建 cursor 物件
-cursor = conn.cursor()
-
 def sendData():    
-# 循環處理每個識別結果
-    for recognition_result in recognition_results:
-        last_update_query = f"""
-        SELECT LicensePlateNumber FROM ParkingSpaces
-        WHERE ID = {recognition_result['ID']};
-        """
-        cursor.execute(last_update_query)
-       
-        row = cursor.fetchone()
-        if row and row[0] != recognition_result['LicensePlateNumber']:
-            # 获取当前时间
-            current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    """發送資料到雲端 API"""
+    try:
+        # 準備要發送的資料
+        api_data = []
+        for result in recognition_results:
+            api_data.append({
+                'ID': result['ID'],
+                'IsOccupied': result['IsOccupied'],
+                'LicensePlateNumber': result['LicensePlateNumber'],
+                'LicensePlateColor': result['LicensePlateColor']
+            })
+        
+        # 發送到 API
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(API_URL, json=api_data, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            print("✅ 資料發送成功")
+            print(f"回應: {response.json()}")
+        else:
+            print(f"❌ 資料發送失敗: {response.status_code}")
+            print(f"錯誤訊息: {response.text}")
+    
+    except requests.exceptions.ConnectionError:
+        print("❌ 無法連接到 API 服務")
+    except requests.exceptions.Timeout:
+        print("❌ API 請求超時")
+    except Exception as e:
+        print(f"❌ 發送資料時發生錯誤: {e}")
 
-            # 建立 SQL UPDATE 指令，同时更新停车时间
-            update_query = f"""
-                UPDATE ParkingSpaces
-                SET 
-                    IsOccupied = {int(recognition_result['IsOccupied'])},
-                    LicensePlateColor = '{recognition_result['LicensePlateColor']}',
-                    LicensePlateNumber = '{recognition_result['LicensePlateNumber']}',
-                    ParkingTime = {'NULL' if recognition_result['LicensePlateNumber'] == 'None' else f"'{current_time}'"}
-                WHERE ID = {recognition_result['ID']};
-            """
-            # 執行 SQL UPDATE 操作
-            cursor.execute(update_query)
-            conn.commit()
-
-'''
-def hasCar_changed():
-    global cars ,hasCar
-    if any(cars[i].has_parking != hasCar[i] for i in range(4)):
-        for i in range(4):
-            hasCar[i] = cars[i].has_parking
-        return True
-    return False
-'''
 def hasCar_changed():
     global cars, hasCar
     for i in range(4):

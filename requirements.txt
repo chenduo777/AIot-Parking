@@ -3,6 +3,10 @@ flask==2.3.3
 flask-cors==4.0.0
 gunicorn==21.2.0
 
+# 資料庫連接
+psycopg2-binary>=2.9.0
+pyodbc>=4.0.39
+
 # 修復版本衝突的套件
 numpy>=1.21.0,<2.0.0
 opencv-python==4.8.1.78
@@ -14,9 +18,6 @@ torchvision>=0.10.0
 # 圖像處理和幾何計算
 Pillow>=8.3.0
 shapely>=1.8.0
-
-# 資料庫連接
-pyodbc>=4.0.39
 
 # 科學計算和繪圖
 matplotlib>=3.5.0
