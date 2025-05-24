@@ -34,7 +34,7 @@ webcam_2 = 0
 F_subprocess = 1
 
 # API 設定 - 支援環境變數或直接設定
-API_URL = os.environ.get('API_URL', 'https://parking-management-api.onrender.com/api/parking/update')
+API_URL = os.environ.get('API_URL', 'https://parking-management-api-lyvg.onrender.com/api/parking/update')
 print(f"使用 API 網址: {API_URL}")
 
 class Car:

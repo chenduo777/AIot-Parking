@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import sys
 
 def test_production_api(base_url):
     """測試正式環境的API"""
@@ -79,24 +80,30 @@ def main():
     print("停車場API測試工具")
     print("=" * 50)
     
-    # 讓使用者輸入API網址
-    print("請輸入以下選項:")
-    print("1. 測試本地服務器 (http://localhost:5000)")
-    print("2. 測試Render部署的服務器")
-    print("3. 輸入自定義網址")
-    
-    choice = input("請選擇 (1/2/3): ").strip()
-    
-    if choice == "1":
-        base_url = "http://localhost:5000"
-    elif choice == "2":
-        app_name = input("請輸入你的Render應用名稱: ").strip()
+    # 檢查命令行參數，用於直接指定 Render 應用名稱
+    if len(sys.argv) > 1:
+        app_name = sys.argv[1]
         base_url = f"https://{app_name}.onrender.com"
-    elif choice == "3":
-        base_url = input("請輸入完整的API網址 (例: https://yourapp.onrender.com): ").strip()
+        print(f"使用命令行參數的 Render 應用名稱: {app_name}")
     else:
-        print("無效選擇，使用本地服務器")
-        base_url = "http://localhost:5000"
+        # 讓使用者輸入API網址
+        print("請輸入以下選項:")
+        print("1. 測試本地服務器 (http://localhost:5000)")
+        print("2. 測試Render部署的服務器")
+        print("3. 輸入自定義網址")
+        
+        choice = input("請選擇 (1/2/3): ").strip()
+        
+        if choice == "1":
+            base_url = "http://localhost:5000"
+        elif choice == "2":
+            app_name = input("請輸入你的Render應用名稱: ").strip()
+            base_url = f"https://{app_name}.onrender.com"
+        elif choice == "3":
+            base_url = input("請輸入完整的API網址 (例: https://yourapp.onrender.com): ").strip()
+        else:
+            print("無效選擇，使用本地服務器")
+            base_url = "http://localhost:5000"
     
     print(f"\n將測試: {base_url}")
     print("-" * 50)

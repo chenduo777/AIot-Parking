@@ -212,7 +212,7 @@ python test_production.py
 
 ```python
 # 修改 API 網址
-API_URL = "https://你的應用名稱.onrender.com/api/parking/update"
+API_URL = "https://parking-management-api-lyvg.onrender.com/api/parking/update"
 
 def sendData():
     # ...existing code...
@@ -243,7 +243,7 @@ crontab -e
 
 ### 基礎URL
 - **本地開發**: `http://localhost:5000/api`
-- **正式環境**: `https://你的應用名稱.onrender.com/api`
+- **正式環境**: `https://parking-management-api-lyvg.onrender.com/api`
 
 ### 主要端點
 

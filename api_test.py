@@ -1,9 +1,11 @@
 import requests
 import json
 import time
+import os
 
-# API基礎URL
-BASE_URL = "http://localhost:5000/api"
+# API基礎URL - 支援環境變数或直接設定
+BASE_URL = os.environ.get('API_BASE_URL', 'https://parking-management-api-lyvg.onrender.com/api')
+print(f"使用 API 基礎網址: {BASE_URL}")
 
 def test_parking_update():
     """測試樹莓派上傳停車狀態"""
