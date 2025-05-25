@@ -1,17 +1,18 @@
+# -*- coding: utf-8 -*-
 import requests
 import json
 import time
 import os
 
-# API基礎URL - 支援環境變数或直接設定
+# API base URL - can be set via environment variable
 BASE_URL = os.environ.get('API_BASE_URL', 'https://parking-management-api-lyvg.onrender.com/api')
-print(f"使用 API 基礎網址: {BASE_URL}")
+print(f"Using API base URL: {BASE_URL}")
 
 def test_parking_update():
-    """測試樹莓派上傳停車狀態"""
-    print("=== 測試停車狀態更新 ===\n")
+    """Test sending parking status data"""
+    print("=== Testing Parking Status Update ===\n")
     
-    # 模擬樹莓派上傳停車狀態
+    # Prepare test data
     test_data = [
         {
             "ID": 1,
@@ -35,39 +36,39 @@ def test_parking_update():
         }
     ]
     
-    print("1. 上傳停車狀態...")
+    print("1. Uploading parking status...")
     response = requests.post(f"{BASE_URL}/parking/update", json=test_data)
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
     
     return response.status_code == 200
 
 def test_parking_status():
-    """測試取得停車場狀態"""
-    print("2. 取得停車場狀態...")
+    """Test retrieving parking lot status"""
+    print("2. Getting parking lot status...")
     response = requests.get(f"{BASE_URL}/parking/status")
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
     
     return response.json() if response.status_code == 200 else None
 
 def test_my_status():
-    """測試查詢特定車牌狀態"""
-    print("3. 查詢車牌 ABC-1234 的停車狀態...")
+    """Test individual parking status"""
+    print("3. Checking license plate ABC-1234 status...")
     response = requests.get(f"{BASE_URL}/parking/my_status?plate=ABC-1234")
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
     
-    print("4. 查詢不存在的車牌 XYZ-9999...")
+    print("4. Checking non-existent license plate XYZ-9999...")
     response = requests.get(f"{BASE_URL}/parking/my_status?plate=XYZ-9999")
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
 
 def test_fee_calculation():
-    """測試停車費用計算"""
-    print("=== 測試停車費用計算 ===\n")
+    """Test parking fee calculation"""
+    print("=== Testing Fee Calculation ===\n")
     
-    # 先上傳一個新車輛
+    # Upload test plate data
     test_data = [
         {
             "ID": 1,
@@ -91,33 +92,33 @@ def test_fee_calculation():
         }
     ]
     
-    print("1. 上傳新車輛停車...")
+    print("1. Uploading test license plate...")
     requests.post(f"{BASE_URL}/parking/update", json=test_data)
     
-    print("2. 立即查詢費用（應該是免費）...")
+    print("2. Checking fee (should be free within 30 minutes)...")
     response = requests.get(f"{BASE_URL}/parking/my_status?plate=TEST-0001")
     if response.status_code == 200:
         data = response.json()
-        print(f"停車時間: {data.get('duration_minutes', 0)} 分鐘")
-        print(f"費用: ${data.get('fee', 0)}")
+        print(f"Parking duration: {data.get('duration_minutes', 0)} minutes")
+        print(f"Fee: ${data.get('fee', 0)}")
     print()
 
 def test_error_cases():
-    """測試錯誤情況"""
-    print("=== 測試錯誤處理 ===\n")
+    """Test error handling"""
+    print("=== Testing Error Scenarios ===\n")
     
-    # 測試無效的更新資料
-    print("1. 測試無效的更新資料...")
-    invalid_data = [{"ID": 1}]  # 缺少必要欄位
+    # Test invalid update data
+    print("1. Testing invalid update data...")
+    invalid_data = [{"ID": 1}]  # Missing required fields
     response = requests.post(f"{BASE_URL}/parking/update", json=invalid_data)
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
     
-    # 測試無效的停車位ID
-    print("2. 測試無效的停車位ID...")
+    # Test invalid parking space ID
+    print("2. Testing invalid parking space ID...")
     invalid_data = [
         {
-            "ID": 5,  # 無效ID
+            "ID": 5,  # Invalid ID
             "IsOccupied": True,
             "LicensePlateNumber": "ABC-1234"
         },
@@ -138,40 +139,40 @@ def test_error_cases():
         }
     ]
     response = requests.post(f"{BASE_URL}/parking/update", json=invalid_data)
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
     
-    # 測試缺少車牌參數
-    print("3. 測試缺少車牌參數...")
+    # Test missing plate parameter
+    print("3. Testing missing plate parameter...")
     response = requests.get(f"{BASE_URL}/parking/my_status")
-    print(f"狀態碼: {response.status_code}")
-    print(f"回應: {json.dumps(response.json(), indent=2, ensure_ascii=False)}\n")
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}\n")
 
 def main():
-    """主測試函數"""
-    print("停車場管理API測試開始...\n")
+    """Main test function"""
+    print("Parking Management API Test Starting...\n")
     
     try:
-        # 基本功能測試
+        # Run basic tests
         if test_parking_update():
             status_data = test_parking_status()
             test_my_status()
             
-            # 費用計算測試
+            # Fee calculation test
             test_fee_calculation()
             
-            # 錯誤處理測試
+            # Error scenario tests
             test_error_cases()
             
-            print("✅ 所有測試完成")
+            print("Test completed successfully")
         else:
-            print("❌ 基本測試失敗")
+            print("Basic test failed")
             
     except requests.exceptions.ConnectionError:
-        print("❌ 錯誤: 無法連接到API伺服器")
-        print("請確保API伺服器正在運行: python parking_api.py")
+        print("Error: Cannot connect to API service")
+        print("Please ensure API service is running: python parking_api.py")
     except Exception as e:
-        print(f"❌ 測試過程中發生錯誤: {e}")
+        print(f"Error during testing: {e}")
 
 if __name__ == "__main__":
     main()

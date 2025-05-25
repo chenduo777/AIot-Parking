@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 import time
 import os
@@ -15,6 +16,9 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
+
+# Import custom tools
+from utils.parking_utils import detect_color
 
 list = []
 
@@ -103,20 +107,20 @@ def detect(save_img=False):
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
-                sorted_indices = torch.argsort(det[:, 0], descending=True)# 使用 torch.sort() 对第1列进行排序，并获取由左至右的順序
-                sorted_tensor = det[sorted_indices]# 使用排序后的索引重新排列原始张量
+                sorted_indices = torch.argsort(det[:, 0], descending=True)  # Sort by first column, returns sorted indices
+                sorted_tensor = det[sorted_indices]  # Use sorted indices to rearrange original tensor
 
 
                 for *xyxy, conf, cls in reversed(sorted_tensor):
                     label = f'{names[int(cls)]} {conf:.2f}'
-                    list.append(names[int(cls)])#每次辨識的字符
+                    list.append(names[int(cls)])  # Each detected character
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
             
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
             
-            color_plate = color_Range(p)#辨識顏色            
-            Str = "".join(list)#列表轉換為字串
-            #print(Str+" "+color_plate)#輸出結果
+            color_plate = detect_color(p)  # Detect color           
+            Str = "".join(list)  # Convert list to string
+            #print(Str+" "+color_plate)  # Output result
             plateList.append(Str)
             colorList.append(color_plate) 
             number_string = p.name.split(".")[0]
@@ -125,58 +129,6 @@ def detect(save_img=False):
     print(numberList)
     print(plateList)
     print(colorList)     
-
-
-
-
-
-
-def color_Range(input):
-    image = cv2.imread(str(input))
-
-    # 定义颜色范围
-    # 红色范围
-    lower_red1 = np.array([0, 100, 100])     # 红色范围的下限1
-    upper_red1 = np.array([10, 255, 255])    # 红色范围的上限1
-    lower_red2 = np.array([160, 100, 100])   # 红色范围的下限2
-    upper_red2 = np.array([179, 255, 255])   # 红色范围的上限2
-
-    # 黄色范围
-    lower_yellow = np.array([20, 100, 100])
-    upper_yellow = np.array([70, 255, 255])
-
-    # 白色范围
-    lower_white = np.array([0, 0, 200])
-    upper_white = np.array([180, 38,255])
-
-    # 将图像从BGR转换为HSV
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-    # 提取颜色区域
-    mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask_red = cv2.bitwise_or(mask_red1, mask_red2)
-
-    mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    mask_white = cv2.inRange(hsv, lower_white, upper_white)
-
-    # 计算特定颜色的像素数量
-    red_pixels = cv2.countNonZero(mask_red)
-    yellow_pixels = cv2.countNonZero(mask_yellow)
-    white_pixels = cv2.countNonZero(mask_white)
-
-    
-    print("red_pixels:",red_pixels)
-    print("yellow_pixels:",yellow_pixels)
-    print("white_pixels:",white_pixels)
-
-    # 判断哪种颜色占比最高
-    color_counts = {'Red': red_pixels, 'Yellow': yellow_pixels, 'White': white_pixels}
-    max_color = max(color_counts, key=color_counts.get)
-    
-    return max_color
-
- 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -200,9 +152,6 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--no-trace', action='store_true', help='don`t trace model')
     opt = parser.parse_args()
-
-    
-
 
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)

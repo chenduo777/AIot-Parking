@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import threading
@@ -11,38 +12,38 @@ from psycopg2.extras import RealDictCursor
 import traceback
 
 app = Flask(__name__)
-CORS(app)  # 允許跨域請求
+CORS(app)  # Allow cross-origin requests
 
-# 資料庫連接設定
+# Database connection settings
 def get_db_connection():
-    """取得資料庫連接"""
+    """Establish database connection"""
     try:
-        # Render 會自動提供 DATABASE_URL 環境變數
+        # Render platform provides DATABASE_URL environment variable
         database_url = os.environ.get('DATABASE_URL')
         if database_url:
-            # 生產環境 (Render)
-            print(f"嘗試連接到資料庫：{database_url[:20]}...") # 只印出連接字串的開頭部分
+            # Cloud environment (Render)
+            print(f"Trying to connect to cloud database: {database_url[:20]}...") # Only show part of the connection string for security
             conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
-            print("✅ 資料庫連接成功")
+            print("✓ Database connection successful")
             return conn
         else:
-            # 本地開發環境，使用記憶體儲存
-            print("⚠️ 找不到 DATABASE_URL 環境變數，使用記憶體儲存模式")
+            # Local development using memory mode
+            print("DATABASE_URL environment variable not found, using memory mode")
             return None
     except Exception as e:
-        print(f"❌ 資料庫連接失敗: {e}")
-        print("⚠️ 使用記憶體儲存模式作為後備")
+        print(f"✗ Database connection failed: {e}")
+        print("Using memory mode as backup")
         return None
 
-# 全域變數儲存停車場狀態 (當無資料庫時使用)
+# Memory data structure (for local development)
 parking_data = {}
 
 def init_database():
-    """初始化資料庫表格"""
+    """Initialize database tables"""
     conn = get_db_connection()
     if not conn:
-        print("使用記憶體儲存模式")
-        # 初始化記憶體資料
+        print("Using memory mode")
+        # Initialize memory data
         global parking_data
         for i in range(1, 5):
             parking_data[i] = {
@@ -55,7 +56,7 @@ def init_database():
     
     try:
         cursor = conn.cursor()
-        # 建立停車場表格
+        # Create parking spaces table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS parking_spaces (
                 id INTEGER PRIMARY KEY,
@@ -68,7 +69,7 @@ def init_database():
             );
         """)
         
-        # 初始化 4 個停車位
+        # Default create 4 parking spaces
         for i in range(1, 5):
             cursor.execute("""
                 INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color) 
@@ -79,17 +80,17 @@ def init_database():
         conn.commit()
         cursor.close()
         conn.close()
-        print("✅ 資料庫初始化成功")
+        print("✓ Database initialization complete")
     except Exception as e:
-        print(f"❌ 資料庫初始化失敗: {e}")
-        print(f"錯誤詳情: {traceback.format_exc()}")
-        print("⚠️ 使用記憶體儲存模式作為後備")
+        print(f"✗ Database initialization failed: {e}")
+        print(f"Error details: {traceback.format_exc()}")
+        print("Using memory mode as backup")
 
-# 在應用啟動時立即初始化資料庫
+# Initialize database on application startup
 init_database()
 
 def calculate_fee(start_time):
-    """計算停車費用：前30分鐘免費，每小時$20"""
+    """Calculate parking fee, first 30 minutes free, then $20 per hour"""
     if not start_time:
         return 0
     
@@ -103,21 +104,21 @@ def calculate_fee(start_time):
     if duration_minutes <= 30:
         return 0
     else:
-        # 超過30分鐘的部分，每小時$20
+        # After 30 minutes, $20 per hour
         billable_minutes = duration_minutes - 30
-        hours = (billable_minutes + 59) // 60  # 無條件進位到小時
+        hours = (billable_minutes + 59) // 60  # Round up to the next hour
         return hours * 20
 
 @app.route('/', methods=['GET'])
 def home():
-    """首頁端點"""
+    """Home endpoint"""
     return jsonify({
-        'message': '停車場管理API服務',
+        'message': 'Parking Management API Service',
         'version': '1.0.0',
         'endpoints': [
-            'POST /api/parking/update - 更新停車狀態',
-            'GET /api/parking/status - 取得停車場狀態',
-            'GET /api/parking/my_status?plate=車牌 - 查詢個人停車狀態'
+            'POST /api/parking/update - Update parking space status',
+            'GET /api/parking/status - Query all parking spaces',
+            'GET /api/parking/my_status?plate=LICENSE - Query individual parking status'
         ],
         'status': 'running',
         'current_time': datetime.now().isoformat(),
@@ -126,25 +127,25 @@ def home():
 
 @app.route('/api/parking/update', methods=['POST'])
 def update_parking_status():
-    """接收樹莓派上傳的停車狀態"""
+    """Receive parking space status from Raspberry Pi"""
     try:
         data = request.get_json()
         
         if not data or not isinstance(data, list) or len(data) != 4:
             return jsonify({
                 'success': False,
-                'error': '請求格式錯誤，需要包含4個停車位的資料'
+                'error': 'Invalid data format, must include status data for 4 parking spaces'
             }), 400
         
         current_time = datetime.now()
         conn = get_db_connection()
         
         if conn:
-            # 使用資料庫
+            # Using database
             try:
                 cursor = conn.cursor()
                 
-                # 確保表格存在
+                # Ensure table exists
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS parking_spaces (
                         id INTEGER PRIMARY KEY,
@@ -164,16 +165,16 @@ def update_parking_status():
                     plate_number = space_data.get('LicensePlateNumber', 'None')
                     plate_color = space_data.get('LicensePlateColor', 'None')
                     
-                    # 處理車牌號碼
+                    # Handle empty values
                     if plate_number == 'None' or not plate_number:
                         plate_number = None
                     if plate_color == 'None' or not plate_color:
                         plate_color = None
                     
-                    # 檢查記錄是否存在
+                    # Check if parking space exists
                     cursor.execute("SELECT COUNT(*) FROM parking_spaces WHERE id = %s", (space_id,))
                     if cursor.fetchone()['count'] == 0:
-                        # 記錄不存在，插入新記錄
+                        # If it doesn't exist, create it
                         cursor.execute("""
                             INSERT INTO parking_spaces 
                             (id, is_occupied, license_plate_number, license_plate_color, parking_time, created_at, updated_at) 
@@ -181,7 +182,7 @@ def update_parking_status():
                         """, (space_id, is_occupied, plate_number, plate_color, 
                               current_time if is_occupied else None, current_time, current_time))
                     else:
-                        # 記錄存在，更新
+                        # Update existing parking space
                         cursor.execute("""
                             UPDATE parking_spaces 
                             SET is_occupied = %s, 
@@ -197,29 +198,29 @@ def update_parking_status():
                 cursor.close()
                 conn.close()
             except Exception as e:
-                print(f"❌ 更新資料庫時出錯: {e}")
-                print(f"錯誤詳情: {traceback.format_exc()}")
+                print(f"✗ Database update failed: {e}")
+                print(f"Error details: {traceback.format_exc()}")
                 conn.close()
                 raise e
         else:
-            # 使用記憶體儲存 (本地開發)
+            # Using memory mode (local development)
             for space_data in data:
                 space_id = space_data.get('ID')
                 is_occupied = space_data.get('IsOccupied', False)
                 plate_number = space_data.get('LicensePlateNumber', 'None')
                 
-                # 驗證資料格式
+                # Validate space ID
                 if space_id not in [1, 2, 3, 4]:
                     return jsonify({
                         'success': False,
-                        'error': f'無效的停車位ID: {space_id}'
+                        'error': f'Invalid parking space ID: {space_id}'
                     }), 400
                 
-                # 處理車牌號碼
+                # Handle empty values
                 if plate_number == 'None' or not plate_number:
                     plate_number = None
                 
-                # 更新記憶體儲存
+                # Memory data mode
                 if is_occupied:
                     parking_data[space_id] = {
                         'id': space_id,
@@ -228,38 +229,38 @@ def update_parking_status():
                         'is_occupied': True
                     }
                 else:
-                    # 如果停車位空了，移除資料或標記為空
+                    # If space is vacated, remove license plate info or mark as empty
                     if space_id in parking_data:
                         parking_data[space_id]['is_occupied'] = False
                         parking_data[space_id]['plate_number'] = None
         
         return jsonify({
             'success': True,
-            'message': '停車狀態更新成功',
+            'message': 'Parking space status updated successfully',
             'timestamp': current_time.isoformat(),
             'storage_mode': 'database' if conn else 'memory'
         })
         
     except Exception as e:
-        print(f"❌ 處理請求時發生錯誤: {e}")
-        print(f"錯誤詳情: {traceback.format_exc()}")
+        print(f"✗ Error processing parking status request: {e}")
+        print(f"Error details: {traceback.format_exc()}")
         return jsonify({
             'success': False,
-            'error': f'更新失敗: {str(e)}'
+            'error': f'Update failed: {str(e)}'
         }), 500
 
 @app.route('/api/parking/status', methods=['GET'])
 def get_parking_status():
-    """取得所有停車位狀態"""
+    """Query all parking spaces"""
     try:
         conn = get_db_connection()
         
         if conn:
-            # 使用資料庫
+            # Using database
             try:
                 cursor = conn.cursor()
                 
-                # 確保表格存在
+                # Ensure table exists
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS parking_spaces (
                         id INTEGER PRIMARY KEY,
@@ -272,7 +273,7 @@ def get_parking_status():
                     );
                 """)
                 
-                # 初始化 4 個停車位
+                # Default create 4 parking spaces
                 for i in range(1, 5):
                     cursor.execute("""
                         INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color) 
@@ -296,12 +297,12 @@ def get_parking_status():
                     })
                 return jsonify(result)
             except Exception as e:
-                print(f"❌ 查詢資料庫時出錯: {e}")
-                print(f"錯誤詳情: {traceback.format_exc()}")
+                print(f"✗ Database query failed: {e}")
+                print(f"Error details: {traceback.format_exc()}")
                 conn.close()
                 raise e
         else:
-            # 使用記憶體儲存
+            # Using memory mode (local development)
             result = []
             for space_id in range(1, 5):
                 if space_id in parking_data and parking_data[space_id]['is_occupied']:
@@ -319,33 +320,33 @@ def get_parking_status():
             return jsonify(result)
         
     except Exception as e:
-        print(f"❌ 處理請求時發生錯誤: {e}")
-        print(f"錯誤詳情: {traceback.format_exc()}")
+        print(f"✗ Error processing query request: {e}")
+        print(f"Error details: {traceback.format_exc()}")
         return jsonify({
             'success': False,
-            'error': f'查詢失敗: {str(e)}'
+            'error': f'Query failed: {str(e)}'
         }), 500
 
 @app.route('/api/parking/my_status', methods=['GET'])
 def get_my_parking_status():
-    """查詢特定車牌的停車狀態"""
+    """Query individual parking status"""
     try:
         plate = request.args.get('plate')
         
         if not plate:
             return jsonify({
                 'success': False,
-                'error': '請提供車牌號碼參數'
+                'error': 'License plate number is required'
             }), 400
         
         conn = get_db_connection()
         
         if conn:
-            # 使用資料庫
+            # Using database
             try:
                 cursor = conn.cursor()
                 
-                # 確保表格存在
+                # Ensure table exists
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS parking_spaces (
                         id INTEGER PRIMARY KEY,
@@ -369,11 +370,11 @@ def get_my_parking_status():
                     if start_time:
                         current_time = datetime.now()
                         
-                        # 計算停車時間
+                        # Calculate parking duration
                         duration = current_time - start_time
                         duration_minutes = int(duration.total_seconds() / 60)
                         
-                        # 計算費用
+                        # Calculate parking fee
                         fee = calculate_fee(start_time)
                         
                         return jsonify({
@@ -384,22 +385,22 @@ def get_my_parking_status():
                             'fee': fee
                         })
             except Exception as e:
-                print(f"❌ 查詢資料庫時出錯: {e}")
-                print(f"錯誤詳情: {traceback.format_exc()}")
+                print(f"✗ Database query failed: {e}")
+                print(f"Error details: {traceback.format_exc()}")
                 conn.close()
                 raise e
         else:
-            # 使用記憶體儲存
+            # Using memory mode (local development)
             for space_id, space in parking_data.items():
                 if space['is_occupied'] and space['plate_number'] == plate:
                     start_time = space['started_at']
                     current_time = datetime.now()
                     
-                    # 計算停車時間
+                    # Calculate parking duration
                     duration = current_time - start_time
                     duration_minutes = int(duration.total_seconds() / 60)
                     
-                    # 計算費用
+                    # Calculate parking fee
                     fee = calculate_fee(start_time)
                     
                     return jsonify({
@@ -410,26 +411,26 @@ def get_my_parking_status():
                         'fee': fee
                     })
         
-        # 沒有找到車牌
+        # Parking space not occupied
         return jsonify({
             'is_parked': False,
-            'message': '您的車目前未停在停車場內'
+            'message': 'No parking space occupied by this license plate'
         })
         
     except Exception as e:
-        print(f"❌ 處理請求時發生錯誤: {e}")
-        print(f"錯誤詳情: {traceback.format_exc()}")
+        print(f"✗ Error processing query request: {e}")
+        print(f"Error details: {traceback.format_exc()}")
         return jsonify({
             'success': False,
-            'error': f'查詢失敗: {str(e)}'
+            'error': f'Query failed: {str(e)}'
         }), 500
 
-# 健康檢查端點
+# Health check endpoint
 @app.route('/health', methods=['GET'])
 def health_check():
-    """健康檢查端點，Render會用這個檢查服務狀態"""
+    """Health check endpoint, for Render platform to check database connection"""
     try:
-        # 檢查資料庫連接
+        # Check database connection
         conn = get_db_connection()
         db_status = "connected" if conn else "disconnected"
         if conn:
@@ -452,20 +453,20 @@ def health_check():
 def not_found(error):
     return jsonify({
         'success': False,
-        'error': 'API端點不存在'
+        'error': 'API endpoint not found'
     }), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({
         'success': False,
-        'error': '內部伺服器錯誤'
+        'error': 'Internal server error'
     }), 500
 
 if __name__ == '__main__':
-    # 初始化資料庫
+    # Initialize database
     init_database()
     
-    # 本地開發時使用
+    # For local development
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

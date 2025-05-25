@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 import time
 from pathlib import Path
@@ -27,31 +28,19 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
 
-
-
+# Import custom tools
+from utils.parking_utils import Car, normalize_license_plate, convert_to_boxes, shape_poly, clear_images_in_folder, send_parking_data
 
 webcam_2 = 0
 F_subprocess = 1
 
-# API 設定 - 支援環境變數或直接設定
+# API configuration - can be set via environment variable
 API_URL = os.environ.get('API_URL', 'https://parking-management-api-lyvg.onrender.com/api/parking/update')
-print(f"使用 API 網址: {API_URL}")
+print(f"Using API URL: {API_URL}")
 
-class Car:
-    def __init__(self, number_plate, color, has_parking):
-        self.number_plate = number_plate
-        self.color = color
-        self.has_parking = has_parking
-
-cars = [None] * 4
-# 初始化每個 Car 物件
-cars[0] = Car("None", "None", False)
-cars[1] = Car("None", "None", False)
-cars[2] = Car("None", "None", False)
-cars[3] = Car("None", "None", False)
-
+# Initialize car objects
+cars = [Car() for _ in range(4)]
 hasCar = [False, False, False, False]
-
 
 recognition_results = [
     {
@@ -81,9 +70,9 @@ recognition_results = [
 ]
 
 def sendData():    
-    """發送資料到雲端 API"""
+    """Send data to backend API"""
     try:
-        # 準備要發送的資料
+        # Prepare data to send
         api_data = []
         for result in recognition_results:
             api_data.append({
@@ -93,28 +82,28 @@ def sendData():
                 'LicensePlateColor': result['LicensePlateColor']
             })
         
-        # 發送到 API
+        # Send to API
         headers = {'Content-Type': 'application/json'}
         response = requests.post(API_URL, json=api_data, headers=headers, timeout=10)
         
         if response.status_code == 200:
-            print("✅ 資料發送成功")
-            print(f"回應: {response.json()}")
+            print("? Data sent successfully")
+            print(f"Response: {response.json()}")
         else:
-            print(f"❌ 資料發送失敗: {response.status_code}")
-            print(f"錯誤訊息: {response.text}")
+            print(f"? Data sending failed: {response.status_code}")
+            print(f"Error message: {response.text}")
     
     except requests.exceptions.ConnectionError:
-        print("❌ 無法連接到 API 服務")
+        print("? Cannot connect to API service")
     except requests.exceptions.Timeout:
-        print("❌ API 請求超時")
+        print("? API request timeout")
     except Exception as e:
-        print(f"❌ 發送資料時發生錯誤: {e}")
+        print(f"? Error sending data: {e}")
 
 def hasCar_changed():
     global cars, hasCar
     for i in range(4):
-        if cars[i].has_parking != hasCar[i]:  # 如果狀態改變
+        if cars[i].has_parking != hasCar[i]:  # If status changed
             if cars[i].has_parking:
                 hasCar[i] = cars[i].has_parking
                 return True
@@ -122,27 +111,6 @@ def hasCar_changed():
                 hasCar[i] = cars[i].has_parking
                 return False
     return False
-
-
-
-def normalize_license_plate(plate):
-    match = re.match(r'([A-Za-z]+)(\d+)', plate)
-    if match:
-        return f'{match.group(1)}-{match.group(2)}'
-    else:
-        return plate
-
-def convert_to_boxes(coordinates):
-    boxes = []
-    for coords in coordinates:
-        x_values = [point[0] for point in coords]
-        y_values = [point[1] for point in coords]
-        x1 = min(x_values)
-        y1 = min(y_values)
-        x2 = max(x_values)
-        y2 = max(y_values)
-        boxes.append([x1, y1, x2, y2])
-    return boxes
 
 def compute_parking_moto(parked_car_boxes_poly, motorcycles_boxes_poly, number_plates_boxes_poly,cars,imgs):
     for i, pol1 in enumerate(parked_car_boxes_poly):
@@ -165,25 +133,6 @@ def compute_parking_moto(parked_car_boxes_poly, motorcycles_boxes_poly, number_p
                             license_plate_image = imgs[0][int(y_min):int(y_max), int(x_min):int(x_max)]# use webcam
                         cv2.imwrite(os.path.join("platePic", str(i)+".jpg"), license_plate_image)
 
-
-def shape_poly(boxes):
-    x1, y1, x2, y2 = boxes
-    pol2_xy = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
-    polygon2_shape = shapely_poly(pol2_xy)
-    return polygon2_shape
-
-def clear_images_in_folder(folder_path):
-    # 檢查資料夾是否存在
-    if not os.path.exists(folder_path):
-        return
-    # 列出資料夾內所有檔案
-    files = os.listdir(folder_path)
-    # 迭代每個檔案，刪除圖片
-    for file in files:
-        file_path = os.path.join(folder_path, file)
-        if os.path.isfile(file_path) and file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-            os.remove(file_path)
-
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz, trace = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, not opt.no_trace
     #save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
@@ -202,7 +151,7 @@ def detect(save_img=False):
     
     with open(regions, 'rb') as f:
         parked_car_boxes = pickle.load(f)
-    # 轉換成方框格式
+    # Convert to rectangle areas
     parked_car_boxes_poly = []
     boxes = convert_to_boxes(parked_car_boxes)
     for box in boxes:
@@ -302,7 +251,7 @@ def detect(save_img=False):
                 for detection in det:
                     box_coordinates = detection[:4]
                     class_index = int(detection[5])
-                    # 根據類別索引將座標添加到對應的列表中
+                    # Classify detected objects by class index
                     if class_index == number_plates_index:
                         number_plates_boxes.append(box_coordinates)
                     elif class_index == motorcycles_index:
@@ -331,7 +280,7 @@ def detect(save_img=False):
                     clear_images_in_folder("platePic")
                     matches = re.findall(r'\[.*?\]', output.decode(), re.DOTALL)
                     numIDList = []
-                    # 输出匹配到的内容
+                    # Process matches
                     for i,match in enumerate(matches):
                         if i == 0:
                             numIDList = eval(match)
@@ -357,11 +306,11 @@ def detect(save_img=False):
                 print(i,":", car.number_plate, ":", car.color,":", car.has_parking)
                 result = next((item for item in recognition_results if item['ID'] == i + 1), None)
                 if result:
-                # 添加車輛資料到該字典中
+                # Update recognition results with new data
                     result['LicensePlateNumber'] = car.number_plate
                     result['LicensePlateColor'] = car.color
                     result['IsOccupied'] = car.has_parking
-                # 打印输出        
+                #        
             sendData()
             print("-----------sendData-----------")  
             t2 = time_synchronized()

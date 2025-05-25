@@ -1,226 +1,186 @@
-# åœè»Šå ´ç®¡ç†ç³»çµ± - å®Œæ•´å¯¦ç¾æµç¨‹
+# ´¼¼z°±¨®ºŞ²z¨t²Î
 
-## ğŸ“‹ å°ˆæ¡ˆæ¦‚è¿°
+## ±M®×·§­z
 
-é€™æ˜¯ä¸€å€‹åŸºæ–¼ YOLOv7 æ·±åº¦å­¸ç¿’çš„æ™ºæ…§åœè»Šå ´ç®¡ç†ç³»çµ±ï¼ŒåŒ…å«ï¼š
-- **å³æ™‚è»Šè¼›æª¢æ¸¬**: ä½¿ç”¨ YOLOv7 è­˜åˆ¥æ©Ÿè»Šå’Œè»Šç‰Œ
-- **åœè»Šç‹€æ…‹ç®¡ç†**: è¿½è¹¤ 4 å€‹åœè»Šä½çš„ä½”ç”¨ç‹€æ…‹
-- **è»Šç‰Œè­˜åˆ¥**: è‡ªå‹•è­˜åˆ¥è»Šç‰Œè™Ÿç¢¼å’Œé¡è‰²
-- **è²»ç”¨è¨ˆç®—**: å‰30åˆ†é˜å…è²»ï¼Œæ¯å°æ™‚$20
-- **API æœå‹™**: æä¾› REST API ä¾›å‰ç«¯å’Œè¡Œå‹•æ‡‰ç”¨ä½¿ç”¨
+³o¬O¤@­Ó°ò©ó YOLOv7 ª«¥óÀË´úªº´¼¼z°±¨®ºŞ²z¨t²Î¡A¥D­n¥\¯à¡G
+- **¨®½ø¿ëÃÑÀË´ú**: ¨Ï¥Î YOLOv7 ÃÑ§O¨®½ø»P¨®µP
+- **°±¨®¦ìºŞ²z**: ºŞ²z 4 ­Ó°±¨®¦ìªº¦û¥Î±¡ªp
+- **¨®µP¿ëÃÑ**: ¦Û°Ê¿ëÃÑ»P°O¿ı¨®µP¸¹½X
+- **¦¬¶O­pºâ**: «e30¤ÀÄÁ§K¶O¡A¨C¤p®É$20
+- **API ªA°È**: ´£¨Ñ REST API ¨Ñ¥~³¡À³¥Î¨Ï¥Î
 
-## ğŸ—ï¸ ç³»çµ±æ¶æ§‹
+## ¨t²Î¬[ºc
 
 ```
-åœè»Šå ´ç®¡ç†ç³»çµ±
-â”œâ”€â”€ ç¡¬é«”å±¤ (æ¨¹è“æ´¾ + æ”å½±æ©Ÿ)
-â”‚   â”œâ”€â”€ detect_yolov7.py        # YOLOv7 ä¸»æª¢æ¸¬ç¨‹å¼
-â”‚   â”œâ”€â”€ detect_rec_plate.py     # è»Šç‰Œè­˜åˆ¥ç¨‹å¼
-â”‚   â””â”€â”€ weights/                # è¨“ç·´å¥½çš„æ¨¡å‹æª”æ¡ˆ
-â”‚
-â”œâ”€â”€ API æœå‹™å±¤
-â”‚   â”œâ”€â”€ parking_api.py          # Flask API ä¸»ç¨‹å¼
-â”‚   â”œâ”€â”€ requirements.txt        # æ‰€æœ‰ä¾è³´å¥—ä»¶
-â”‚   â””â”€â”€ .gitignore             # Git å¿½ç•¥æª”æ¡ˆ
-â”‚
-â”œâ”€â”€ æ¸¬è©¦å·¥å…·
-â”‚   â”œâ”€â”€ api_test.py            # æœ¬åœ° API æ¸¬è©¦
-â”‚   â”œâ”€â”€ test_production.py     # æ­£å¼ç’°å¢ƒæ¸¬è©¦
-â”‚   â””â”€â”€ matplo_place.py        # åœè»Šä½å¯è¦–åŒ–
-â”‚
-â””â”€â”€ éƒ¨ç½²æª”æ¡ˆ
-    â”œâ”€â”€ Procfile               # Render éƒ¨ç½²è¨­å®š
-    â””â”€â”€ render.yaml           # Render é…ç½®æª”æ¡ˆ
+´¼¼z°±¨®ºŞ²z¨t²Î
+¢u¢w¢w ÀË´ú¼Ò²Õ (¾ğ²ù¬£ + Äá¼v¾÷)
+¢x   ¢u¢w¢w detect_yolov7.py        # YOLOv7 ¥D­nºÊ´úµ{¦¡
+¢x   ¢u¢w¢w detect_rec_plate.py     # ¨®µP¿ëÃÑµ{¦¡
+¢x   ¢|¢w¢w weights/                # °V½m¦nªº¼Ò«¬ÀÉ®×
+¢x
+¢u¢w¢w API ªA°È¼Ò²Õ
+¢x   ¢u¢w¢w parking_api.py          # Flask API ¥Dµ{¦¡
+¢x   ¢u¢w¢w requirements.txt        # ¨Ì¿à®M¥ó¦Cªí
+¢x   ¢|¢w¢w .gitignore             # Git ©¿²¤ÀÉ®×
+¢x
+¢u¢w¢w ´ú¸Õ¤u¨ã
+¢x   ¢u¢w¢w api_test.py            # ´ú¸Õ API ¥\¯à
+¢x   ¢u¢w¢w test_production.py     # ¥Í²£Àô¹Ò´ú¸Õ
+¢x   ¢|¢w¢w matplo_place.py        # °±¨®¦ì¦ì¸mÃ¸»s
+¢x
+¢|¢w¢w ³¡¸pÀÉ®×
+    ¢u¢w¢w Procfile               # Render ³¡¸p³]©w
+    ¢|¢w¢w render.yaml           # Render °t¸mÀÉ®×
 ```
 
 ---
 
-## ğŸš€ å®Œæ•´å¯¦ç¾æµç¨‹
+## §Ö³t¶}©l«ü«n
 
-### éšæ®µ 1: ç’°å¢ƒæº–å‚™èˆ‡ä¾è³´å®‰è£
+### ¨BÆJ 1: ·Ç³Æ¶}µoÀô¹Ò
 
-#### 1.1 å»ºç«‹è™›æ“¬ç’°å¢ƒ (Windows)
+#### 1.1 «Ø¥ßµêÀÀÀô¹Ò (Windows)
 ```bash
-# åˆ‡æ›åˆ°å°ˆæ¡ˆç›®éŒ„
-cd "d:\school data\NTUT\IoT\final project\project"
+# ¶i¤J±M®×¥Ø¿ı
+cd "§Aªº±M®×¸ô®|"
 
-# å•Ÿå‹•ç¾æœ‰è™›æ“¬ç’°å¢ƒ
-.\aiotparking\Scripts\activate
-
-# æˆ–å»ºç«‹æ–°çš„è™›æ“¬ç’°å¢ƒ
+# «Ø¥ß·sªºµêÀÀÀô¹Ò
 python -m venv parking_env
 parking_env\Scripts\activate
 ```
 
-#### 1.2 å®‰è£å®Œæ•´ä¾è³´å¥—ä»¶
+#### 1.2 ¦w¸Ë©Ò»İ®M¥ó
 ```bash
-# å®‰è£æ‰€æœ‰å¿…è¦å¥—ä»¶
+# ¦w¸Ë©Ò¦³¥²­n®M¥ó
 pip install -r requirements.txt
 
-# é©—è­‰æ ¸å¿ƒå¥—ä»¶å®‰è£
-python -c "import torch, cv2, flask, numpy, shapely; print('âœ… æ‰€æœ‰å¥—ä»¶å®‰è£æˆåŠŸ')"
+# ÅçÃÒ®Ö¤ß®M¥ó¦w¸Ë
+python -c "import torch, cv2, flask, numpy, shapely; print('©Ò¦³®Ö¤ß®M¥ó¤w¦w¸Ë¦¨¥\')"
 ```
 
-#### 1.3 æº–å‚™æ¨¡å‹æª”æ¡ˆ
-ç¢ºä¿ `weights/` è³‡æ–™å¤¾åŒ…å«ï¼š
-- `best.pt` - YOLOv7 æ©Ÿè»Šæª¢æ¸¬æ¨¡å‹
-- `yolov7_plate_0421.pt` - è»Šç‰Œè­˜åˆ¥æ¨¡å‹
-- `new_pkg.p` - åœè»Šå€åŸŸå®šç¾©æª”æ¡ˆ
+#### 1.3 ·Ç³Æ¼Ò«¬ÀÉ®×
+½T«O `weights/` ¸ê®Æ§¨¥]§t¡G
+- `best.pt` - YOLOv7 ¨®½øÀË´ú¼Ò«¬
+- `yolov7_plate_0421.pt` - ¨®µP¿ëÃÑ¼Ò«¬
+- `new_pkg.p` - °±¨®¦ì³]©wÀÉ®×
 
-### éšæ®µ 2: æœ¬åœ°æ¸¬è©¦èˆ‡é©—è­‰
+### ¨BÆJ 2: ¥»¦a´ú¸Õ¨t²Î
 
-#### 2.1 æ¸¬è©¦ YOLOv7 æª¢æ¸¬ç³»çµ±
+#### 2.1 ´ú¸Õ YOLOv7 ÀË´ú¨t²Î
 ```bash
-# æ¸¬è©¦æ©Ÿè»Šæª¢æ¸¬ (ä½¿ç”¨æ”å½±æ©Ÿ)
+# ´ú¸Õ¨®½øÀË´ú (¨Ï¥ÎÄá¼v¾÷)
 python detect_yolov7.py --source 0 --weights weights/best.pt
 
-# æ¸¬è©¦éœæ…‹åœ–ç‰‡æª¢æ¸¬
+# ´ú¸Õ¹Ï¤ùÀÉ®×ÀË´ú
 python detect_yolov7.py --source "test_image.jpg" --weights weights/best.pt
 ```
 
-#### 2.2 æ¸¬è©¦è»Šç‰Œè­˜åˆ¥ç³»çµ±
+#### 2.2 ´ú¸Õ¨®µP¿ëÃÑ¥\¯à
 ```bash
-# æ¸¬è©¦è»Šç‰Œè­˜åˆ¥
+# ´ú¸Õ¨®µP¿ëÃÑ
 python detect_rec_plate.py --source "platePic" --weights weights/yolov7_plate_0421.pt
 ```
 
-#### 2.3 å•Ÿå‹• API æœå‹™
+#### 2.3 ±Ò°Ê API ªA°È
 ```bash
-# å•Ÿå‹•æœ¬åœ° API æœå‹™
+# ¦b¥»¦a±Ò°Ê API ªA°È
 python parking_api.py
 ```
 
-API å°‡åœ¨ `http://localhost:5000` é‹è¡Œï¼Œæä¾›ä»¥ä¸‹ç«¯é»ï¼š
-- `GET /` - æœå‹™ç‹€æ…‹é¦–é 
-- `GET /health` - å¥åº·æª¢æŸ¥
-- `POST /api/parking/update` - æ›´æ–°åœè»Šç‹€æ…‹
-- `GET /api/parking/status` - æŸ¥è©¢æ‰€æœ‰åœè»Šä½
-- `GET /api/parking/my_status?plate=è»Šç‰Œ` - æŸ¥è©¢å€‹äººç‹€æ…‹
+API ·|¦b `http://localhost:5000` °õ¦æ¡A´£¨Ñ¥H¤UºİÂI¡G
+- `GET /` - ªA°È­º­¶¸ê°T
+- `GET /health` - °·±dÀË¬d
+- `POST /api/parking/update` - §ó·s°±¨®¦ìª¬ºA
+- `GET /api/parking/status` - ¬d¸ß©Ò¦³°±¨®¦ì
+- `GET /api/parking/my_status?plate=¨®µP` - ¬d¸ß­Ó¤H¨®¦ì
 
-#### 2.4 æ¸¬è©¦ API åŠŸèƒ½
+#### 2.4 ´ú¸Õ API ¥\¯à
 ```bash
-# é–‹å•Ÿæ–°çµ‚ç«¯ï¼ŒåŸ·è¡Œ API æ¸¬è©¦
+# °õ¦æ¦Û°Ê¤ÆºİÂI´ú¸Õ
 python api_test.py
-
-# æˆ–ä½¿ç”¨äº’å‹•å¼æ¸¬è©¦å·¥å…·
-python test_production.py
 ```
 
-### éšæ®µ 3: ç³»çµ±æ•´åˆæ¸¬è©¦
+### ¨BÆJ 3: ¾ã¦X¨t²Î´ú¸Õ
 
-#### 3.1 æ•´åˆæª¢æ¸¬èˆ‡APIç³»çµ±
-1. **ä¿®æ”¹ detect_yolov7.py**ï¼Œæ•´åˆ API å‘¼å«ï¼š
+#### 3.1 ³s±µÀË´ú©MAPI¨t²Î
+¦b `detect_yolov7.py` ¤¤¤w°t¸m API ³s±µ¡G
 
 ```python
-import requests
-
-# åœ¨ sendData() å‡½æ•¸ä¸­åŠ å…¥ API å‘¼å«
-def sendData():
-    # æº–å‚™ API è³‡æ–™æ ¼å¼
-    api_data = []
-    for result in recognition_results:
-        api_data.append({
-            "ID": result['ID'],
-            "IsOccupied": result['IsOccupied'],
-            "LicensePlateNumber": result['LicensePlateNumber']
-        })
-    
-    # ç™¼é€åˆ° API
-    try:
-        response = requests.post(
-            'http://localhost:5000/api/parking/update',
-            json=api_data,
-            headers={'Content-Type': 'application/json'}
-        )
-        if response.status_code == 200:
-            print("âœ… API æ›´æ–°æˆåŠŸ")
-        else:
-            print(f"âŒ API æ›´æ–°å¤±æ•—: {response.text}")
-    except Exception as e:
-        print(f"âŒ API é€£æ¥éŒ¯èª¤: {e}")
+# API °t¸m - ¥i¥H³q¹LÀô¹ÒÅÜ¶q³]¸mAPI¦a§}
+API_URL = os.environ.get('API_URL', 'https://parking-management-api-lyvg.onrender.com/api/parking/update')
 ```
 
-#### 3.2 å®Œæ•´ç³»çµ±æ¸¬è©¦æµç¨‹
+#### 3.2 §¹¾ã¬yµ{´ú¸Õ
 ```bash
-# 1. å•Ÿå‹• API æœå‹™ (çµ‚ç«¯ 1)
+# 1. ±Ò°Ê API ªA°È (²×ºİ¾÷ 1)
 python parking_api.py
 
-# 2. å•Ÿå‹• YOLOv7 æª¢æ¸¬ (çµ‚ç«¯ 2)
+# 2. ±Ò°Ê YOLOv7 ÀË´ú (²×ºİ¾÷ 2)
 python detect_yolov7.py --source 0
 
-# 3. æ¸¬è©¦ API å›æ‡‰ (çµ‚ç«¯ 3)
-python test_production.py
+# 3. ´ú¸Õ API ¥\¯à (²×ºİ¾÷ 3)
+python api_test.py
 ```
 
-### éšæ®µ 4: é›²ç«¯éƒ¨ç½² (Render)
+### ¨BÆJ 4: ¶³ºİ³¡¸p (Render)
 
-#### 4.1 æº–å‚™éƒ¨ç½²æª”æ¡ˆ
+#### 4.1 ³¡¸p«e·Ç³Æ
 
-å»ºç«‹ `Procfile`ï¼š
-```
-web: gunicorn parking_api:app
-```
+Render ³¡¸p©Ò»İÀÉ®×¤w·Ç³Æ¦n¡G
+- `Procfile`: «ü©w±Ò°Ê©R¥O
+- `.gitignore`: ±Æ°£¤£¥²­nªºÀÉ®×
 
-å»ºç«‹ `.gitignore`ï¼š
-```
-__pycache__/
-*.pyc
-.env
-.venv
-platePic/
-runs/
-weights/*.pt
-```
+#### 4.2 ¦b Render «Ø¥ß PostgreSQL ¸ê®Æ®w
 
-#### 4.2 éƒ¨ç½²åˆ° GitHub
-```bash
-# åˆå§‹åŒ– Git å€‰åº«
-git init
-git add .
-git commit -m "Initial commit: åœè»Šå ´ç®¡ç†ç³»çµ±"
+1. µn¤J [Render.com](https://render.com)
+2. ±q¥ª°¼¾É¯è¿ï¾Ü "PostgreSQL"
+3. ÂIÀ» "New PostgreSQL" «Ø¥ß·s¸ê®Æ®w
+4. °t¸m³]©w¡G
+   ```
+   Name: parking-db
+   Database: parking
+   User: parking_user
+   ```
+5. «Ø¥ß«á¡A°O¤U´£¨Ñªº "Internal Database URL" ©M "External Database URL"
 
-# æ¨é€åˆ° GitHub
-git remote add origin https://github.com/ä½ çš„ç”¨æˆ¶å/parking-management-api.git
-git branch -M main
-git push -u origin main
-```
+#### 4.3 ³¡¸p¨ì Render
 
-#### 4.3 éƒ¨ç½²åˆ° Render
-1. å‰å¾€ [Render.com](https://render.com) ä¸¦è¨»å†Š
-2. å»ºç«‹æ–°çš„ Web Service
-3. é€£æ¥ GitHub å€‰åº«
-4. è¨­å®šéƒ¨ç½²åƒæ•¸ï¼š
+1. ¦b Render ±±¨î¥x¤¤¿ï¾Ü "Web Services"
+2. ÂIÀ» "New Web Service"
+3. ³s±µ§Aªº GitHub ±M®×
+4. °t¸m³¡¸p³]©w¡G
    ```
    Name: parking-management-api
    Environment: Python 3
    Build Command: pip install -r requirements.txt
    Start Command: gunicorn parking_api:app
    ```
-5. é»æ“Šéƒ¨ç½²ä¸¦ç­‰å¾…å®Œæˆ
+5. ¦b "Environment Variables" ³]©w¤¤¡A²K¥[¡G
+   ```
+   DATABASE_URL: [±q¤W¤@¨B½Æ»sªº Internal Database URL]
+   ```
+6. ÂIÀ» "Create Web Service" ±Ò°Ê³¡¸p
 
-#### 4.4 æ¸¬è©¦é›²ç«¯éƒ¨ç½²
+#### 4.4 ´ú¸Õ¶³ºİ³¡¸p
 ```bash
-# æ¸¬è©¦é›²ç«¯ API
-python test_production.py
-# é¸æ“‡é¸é … 2ï¼Œè¼¸å…¥ä½ çš„ Render æ‡‰ç”¨åç¨±
+# ­×§ï´ú¸ÕÀÉ®×¤¤ªº API °òÂ¦¦a§}
+# ±N API_BASE_URL Àô¹ÒÅÜ¼Æ³]©w¬°§Aªº Render ºô§}
+export API_BASE_URL="https://§AªºÀ³¥Î.onrender.com/api"
+python api_test.py
 ```
 
-### éšæ®µ 5: ç”Ÿç”¢ç’°å¢ƒé…ç½®
+### ¨BÆJ 5: ¾ğ²ù¬£³]¸m
 
-#### 5.1 æ¨¹è“æ´¾ç«¯é…ç½®
-åœ¨æ¨¹è“æ´¾ä¸Šä¿®æ”¹ `detect_yolov7.py`ï¼ŒæŒ‡å‘é›²ç«¯ APIï¼š
+#### 5.1 ¾ğ²ù¬£°t¸m
+¦b¾ğ²ù¬£¤W­×§ï `detect_yolov7.py`¡A³]©w¶³ºİ API¡G
 
 ```python
-# ä¿®æ”¹ API ç¶²å€
-API_URL = "https://parking-management-api-lyvg.onrender.com/api/parking/update"
-
-def sendData():
-    # ...existing code...
-    response = requests.post(API_URL, json=api_data)
+# ³]©w API ºô§}
+API_URL = "https://§AªºÀ³¥Î.onrender.com/api/parking/update"
 ```
 
-#### 5.2 è¨­å®šè‡ªå‹•å•Ÿå‹•
-å»ºç«‹ `start_detection.sh`ï¼š
+#### 5.2 ³]©w¦Û°Ê±Ò°Ê
+«Ø¥ß `start_detection.sh`¡G
 ```bash
 #!/bin/bash
 cd /home/pi/parking_project
@@ -228,26 +188,26 @@ source venv/bin/activate
 python detect_yolov7.py --source 0
 ```
 
-è¨­å®šé–‹æ©Ÿè‡ªå‹•åŸ·è¡Œï¼š
+³]©w¬°¶}¾÷¦Û°Ê°õ¦æ¡G
 ```bash
-# ç·¨è¼¯ crontab
+# ½s¿è crontab
 crontab -e
 
-# åŠ å…¥ä»¥ä¸‹è¡Œ
+# ¥[¤J¥H¤U¦æ
 @reboot /home/pi/parking_project/start_detection.sh
 ```
 
 ---
 
-## ğŸ“± API ä½¿ç”¨æŒ‡å—
+## API ¨Ï¥Î»¡©ú
 
-### åŸºç¤URL
-- **æœ¬åœ°é–‹ç™¼**: `http://localhost:5000/api`
-- **æ­£å¼ç’°å¢ƒ**: `https://parking-management-api-lyvg.onrender.com/api`
+### °òÂ¦URL
+- **¥»¦a¶}µo**: `http://localhost:5000/api`
+- **¥Í²£Àô¹Ò**: `https://parking-management-api-lyvg.onrender.com/api`
 
-### ä¸»è¦ç«¯é»
+### ¥D­nºİÂI
 
-#### 1. æ›´æ–°åœè»Šç‹€æ…‹ (æ¨¹è“æ´¾ä½¿ç”¨)
+#### 1. §ó·s°±¨®¦ìª¬ºA (¾ğ²ù¬£¨Ï¥Î)
 ```http
 POST /api/parking/update
 Content-Type: application/json
@@ -260,12 +220,12 @@ Content-Type: application/json
 ]
 ```
 
-#### 2. æŸ¥è©¢åœè»Šå ´ç‹€æ…‹
+#### 2. ¬d¸ß°±¨®³õª¬ºA
 ```http
 GET /api/parking/status
 ```
 
-å›æ‡‰ç¯„ä¾‹ï¼š
+¦^À³½d¨Ò¡G
 ```json
 [
   {"id": 1, "is_occupied": true, "plate_number": "ABC-1234"},
@@ -275,55 +235,118 @@ GET /api/parking/status
 ]
 ```
 
-#### 3. æŸ¥è©¢å€‹äººåœè»Šç‹€æ…‹
+#### 3. ¬d¸ß­Ó¤H°±¨®ª¬ºA
 ```http
 GET /api/parking/my_status?plate=ABC-1234
 ```
 
-å›æ‡‰ç¯„ä¾‹ï¼š
+¦^À³½d¨Ò¡G
 ```json
 {
   "is_parked": true,
   "parking_slot": 1,
-  "started_at": "2025-05-24 14:00:00",
+  "started_at": "2023-05-24 14:00:00",
   "duration_minutes": 85,
   "fee": 20
 }
 ```
 
-## ğŸ¯ æœªä¾†æ“´å±•è¨ˆåŠƒ
+## ¸ê®Æ®w»¡©ú
 
-### 1. è³‡æ–™åº«æ•´åˆ
-- åŠ å…¥ PostgreSQL æ”¯æ´
-- å¯¦ç¾è³‡æ–™æŒä¹…åŒ–
-- æ­·å²è³‡æ–™åˆ†æ
+### PostgreSQL ¸ê®Æ®w¬[ºc
 
-### 2. å‰ç«¯ä»‹é¢
-- React.js ç®¡ç†é¢æ¿
-- å³æ™‚ç‹€æ…‹é¡¯ç¤º
-- æ‰‹æ©Ÿ App é–‹ç™¼
+¥»¨t²Î¨Ï¥Î PostgreSQL ¸ê®Æ®w¦sÀx°±¨®¸ê°T¡A¥D­n¸ê®Æªíµ²ºc¡G
 
-### 3. é€²éšåŠŸèƒ½
-- è»Šç‰Œé»‘åå–®
-- é ç´„åœè»ŠåŠŸèƒ½
-- é›»å­æ”¯ä»˜æ•´åˆ
+```sql
+CREATE TABLE parking_spaces (
+    id INTEGER PRIMARY KEY,
+    is_occupied BOOLEAN DEFAULT FALSE,
+    license_plate_number VARCHAR(20),
+    license_plate_color VARCHAR(20),
+    parking_time TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### ¸ê®Æ®w³s±µ³]©w
+
+- ¨t²Î³z¹LÀô¹ÒÅÜ¼Æ `DATABASE_URL` ¦Û°Ê³s±µ¨ì Render ´£¨Ñªº PostgreSQL ¸ê®Æ®w
+- ¦pªGÀô¹ÒÅÜ¼Æ¤£¦s¦b¡A¨t²Î·|¦Û°Ê¤Á´«¨ì°O¾ĞÅé¼Ò¦¡¹B§@
+- °O¾ĞÅé¼Ò¦¡¾A¦X¥»¦a¶}µo©M´ú¸Õ
+
+### ºÊ±±¸ê®Æ®wª¬ºA
+
+¥i³q¹L°·±dÀË¬dºİÂIºÊ±±¸ê®Æ®w³s±µª¬ºA¡G
+
+```http
+GET /health
+```
+
+¦^À³½d¨Ò¡G
+```json
+{
+  "status": "healthy",
+  "timestamp": "2023-05-24T14:00:00",
+  "uptime": "running",
+  "database": "connected"
+}
+```
+
+## ¶i¶¥¶}µo«ØÄ³
+
+### 1. ¸ê®Æ®wÂX®i
+- ¼W¥[ PostgreSQL ®e¶q
+- ³]­p¾ú¥v°O¿ıªí
+- «Ø¥ß¥Î¤á»{ÃÒ
+
+### 2. «eºİ¶}µo
+- React.js ºŞ²z¤¶­±
+- §Y®É¨®¦ìÅã¥Ü
+- ¤â¾÷ App ¾ã¦X
+
+### 3. ¥\¯à©İ®i
+- ¨®µP¹w¬ù¥\¯à
+- ªø´Á°±¨®§é¦©
+- ¦hºØ¥I´Ú¤è¦¡
 
 ---
 
-## ğŸ“ æŠ€è¡“æ”¯æ´
+## °İÃD±Æ¸Ñ
 
-å¦‚æœé‡åˆ°å•é¡Œï¼Œè«‹æª¢æŸ¥ï¼š
-1. [æ•…éšœæ’é™¤](#æ•…éšœæ’é™¤) ç« ç¯€
-2. æŸ¥çœ‹ç³»çµ±æ—¥èªŒå’ŒéŒ¯èª¤è¨Šæ¯
-3. ç¢ºèªæ‰€æœ‰ä¾è³´å¥—ä»¶æ­£ç¢ºå®‰è£
-4. é©—è­‰ç¶²è·¯é€£æ¥å’Œ API å¯é”æ€§
+¦pªG¹J¨ì°İÃD¡A½ĞÀË¬d¡G
+1. Àô¹ÒÅÜ¼Æ³]©w¬O§_¥¿½T (`DATABASE_URL` ©M `API_URL`)
+2. ©Ò¦³¨Ì¿à®M¥ó¬O§_¤w¦w¸Ë
+3. ¼Ò«¬ÀÉ®×¬O§_¤w©ñ¸m©ó¥¿½T¦ì¸m
+4. ½T«Oºô¸ô³s±µ¯à°÷³X°İ API ªA°È
+5. Render ªA°Èª¬ºA¬O§_¥¿±`¹B§@
+
+### ±`¨£°İÃD¸Ñ¨M¤è®×
+
+#### ¸ê®Æ®w³s±µ¿ù»~
+```
+? ¸ê®Æ®w³s±µ¥¢±Ñ: ³s±µ³Q©Úµ´
+```
+¸Ñ¨M¤è®×¡GÀË¬d `DATABASE_URL` ¬O§_¥¿½T¡A©Î½T»{ Render PostgreSQL ªA°È¬O§_¦b¹B¦æ¤¤
+
+#### API ³s±µ°İÃD
+```
+? µLªk³s±µ¨ì API ªA°È
+```
+¸Ñ¨M¤è®×¡GÀË¬dºô¸ô³s±µ¡A½T»{ API ªA°Èºô§}¬O§_¥¿½T¡ARender ªA°È¬O§_±Ò°Ê
+
+#### ¨®µP¿ëÃÑ°İÃD
+```
+¨®µP¿ëÃÑ¿ù»~: [Error]
+```
+¸Ñ¨M¤è®×¡G½T»{ `weights/` ¸ê®Æ§¨¤¤ªº¼Ò«¬ÀÉ®×¬O§_§¹¾ã¡AÀË¬dÄá¼v¾÷³s±µ©M¥ú½u±ø¥ó
 
 ---
 
-## ğŸ“„ æˆæ¬Šèªªæ˜
+## ±ÂÅv»¡©ú
 
-æœ¬å°ˆæ¡ˆåƒ…ä¾›å­¸è¡“ç ”ç©¶ä½¿ç”¨ï¼Œè«‹å‹¿ç”¨æ–¼å•†æ¥­ç”¨é€”ã€‚
+¥»±M®×¶È¨Ñ¾Ç²ß»P¬ã¨s¨Ï¥Î¡A½Ğ¤Å¥Î©ó°Ó·~¥Øªº¡C
 
 ---
 
-*æœ€å¾Œæ›´æ–°: 2025å¹´5æœˆ24æ—¥*
+*³Ì«á§ó·s: 2023¦~5¤ë24¤é*
