@@ -4,9 +4,11 @@ import threading
 import time
 import json
 import os
+import sys
 from datetime import datetime, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import traceback
 
 app = Flask(__name__)
 CORS(app)  # 允許跨域請求
@@ -19,13 +21,17 @@ def get_db_connection():
         database_url = os.environ.get('DATABASE_URL')
         if database_url:
             # 生產環境 (Render)
+            print(f"嘗試連接到資料庫：{database_url[:20]}...") # 只印出連接字串的開頭部分
             conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+            print("✅ 資料庫連接成功")
+            return conn
         else:
             # 本地開發環境，使用記憶體儲存
+            print("⚠️ 找不到 DATABASE_URL 環境變數，使用記憶體儲存模式")
             return None
-        return conn
     except Exception as e:
-        print(f"資料庫連接失敗: {e}")
+        print(f"❌ 資料庫連接失敗: {e}")
+        print("⚠️ 使用記憶體儲存模式作為後備")
         return None
 
 # 全域變數儲存停車場狀態 (當無資料庫時使用)
@@ -36,6 +42,15 @@ def init_database():
     conn = get_db_connection()
     if not conn:
         print("使用記憶體儲存模式")
+        # 初始化記憶體資料
+        global parking_data
+        for i in range(1, 5):
+            parking_data[i] = {
+                'id': i,
+                'is_occupied': False,
+                'plate_number': None,
+                'started_at': None
+            }
         return
     
     try:
@@ -67,6 +82,11 @@ def init_database():
         print("✅ 資料庫初始化成功")
     except Exception as e:
         print(f"❌ 資料庫初始化失敗: {e}")
+        print(f"錯誤詳情: {traceback.format_exc()}")
+        print("⚠️ 使用記憶體儲存模式作為後備")
+
+# 在應用啟動時立即初始化資料庫
+init_database()
 
 def calculate_fee(start_time):
     """計算停車費用：前30分鐘免費，每小時$20"""
@@ -121,35 +141,66 @@ def update_parking_status():
         
         if conn:
             # 使用資料庫
-            cursor = conn.cursor()
-            
-            for space_data in data:
-                space_id = space_data.get('ID')
-                is_occupied = space_data.get('IsOccupied', False)
-                plate_number = space_data.get('LicensePlateNumber', 'None')
-                plate_color = space_data.get('LicensePlateColor', 'None')
+            try:
+                cursor = conn.cursor()
                 
-                # 處理車牌號碼
-                if plate_number == 'None' or not plate_number:
-                    plate_number = None
-                if plate_color == 'None' or not plate_color:
-                    plate_color = None
-                
-                # 更新資料庫
+                # 確保表格存在
                 cursor.execute("""
-                    UPDATE parking_spaces 
-                    SET is_occupied = %s, 
-                        license_plate_number = %s,
-                        license_plate_color = %s,
-                        parking_time = %s,
-                        updated_at = %s
-                    WHERE id = %s;
-                """, (is_occupied, plate_number, plate_color, 
-                     current_time if is_occupied else None, current_time, space_id))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
+                    CREATE TABLE IF NOT EXISTS parking_spaces (
+                        id INTEGER PRIMARY KEY,
+                        is_occupied BOOLEAN DEFAULT FALSE,
+                        license_plate_number VARCHAR(20),
+                        license_plate_color VARCHAR(20),
+                        parking_time TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                conn.commit()
+                
+                for space_data in data:
+                    space_id = space_data.get('ID')
+                    is_occupied = space_data.get('IsOccupied', False)
+                    plate_number = space_data.get('LicensePlateNumber', 'None')
+                    plate_color = space_data.get('LicensePlateColor', 'None')
+                    
+                    # 處理車牌號碼
+                    if plate_number == 'None' or not plate_number:
+                        plate_number = None
+                    if plate_color == 'None' or not plate_color:
+                        plate_color = None
+                    
+                    # 檢查記錄是否存在
+                    cursor.execute("SELECT COUNT(*) FROM parking_spaces WHERE id = %s", (space_id,))
+                    if cursor.fetchone()['count'] == 0:
+                        # 記錄不存在，插入新記錄
+                        cursor.execute("""
+                            INSERT INTO parking_spaces 
+                            (id, is_occupied, license_plate_number, license_plate_color, parking_time, created_at, updated_at) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """, (space_id, is_occupied, plate_number, plate_color, 
+                              current_time if is_occupied else None, current_time, current_time))
+                    else:
+                        # 記錄存在，更新
+                        cursor.execute("""
+                            UPDATE parking_spaces 
+                            SET is_occupied = %s, 
+                                license_plate_number = %s,
+                                license_plate_color = %s,
+                                parking_time = %s,
+                                updated_at = %s
+                            WHERE id = %s;
+                        """, (is_occupied, plate_number, plate_color, 
+                              current_time if is_occupied else None, current_time, space_id))
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+            except Exception as e:
+                print(f"❌ 更新資料庫時出錯: {e}")
+                print(f"錯誤詳情: {traceback.format_exc()}")
+                conn.close()
+                raise e
         else:
             # 使用記憶體儲存 (本地開發)
             for space_data in data:
@@ -168,28 +219,30 @@ def update_parking_status():
                 if plate_number == 'None' or not plate_number:
                     plate_number = None
                 
-                # 如果停車位原本是空的，現在有車了
-                if space_id not in parking_data and is_occupied and plate_number:
+                # 更新記憶體儲存
+                if is_occupied:
                     parking_data[space_id] = {
+                        'id': space_id,
                         'plate_number': plate_number,
                         'started_at': current_time,
                         'is_occupied': True
                     }
-                # 如果停車位原本有車，現在空了
-                elif space_id in parking_data and not is_occupied:
-                    del parking_data[space_id]
-                # 如果停車位有車且車牌相同，更新狀態
-                elif space_id in parking_data and is_occupied and plate_number:
-                    parking_data[space_id]['plate_number'] = plate_number
-                    parking_data[space_id]['is_occupied'] = True
+                else:
+                    # 如果停車位空了，移除資料或標記為空
+                    if space_id in parking_data:
+                        parking_data[space_id]['is_occupied'] = False
+                        parking_data[space_id]['plate_number'] = None
         
         return jsonify({
             'success': True,
             'message': '停車狀態更新成功',
-            'timestamp': current_time.isoformat()
+            'timestamp': current_time.isoformat(),
+            'storage_mode': 'database' if conn else 'memory'
         })
         
     except Exception as e:
+        print(f"❌ 處理請求時發生錯誤: {e}")
+        print(f"錯誤詳情: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': f'更新失敗: {str(e)}'
@@ -203,25 +256,55 @@ def get_parking_status():
         
         if conn:
             # 使用資料庫
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM parking_spaces ORDER BY id;")
-            spaces = cursor.fetchall()
-            cursor.close()
-            conn.close()
-            
-            result = []
-            for space in spaces:
-                result.append({
-                    'id': space['id'],
-                    'is_occupied': space['is_occupied'],
-                    'plate_number': space['license_plate_number']
-                })
-            return jsonify(result)
+            try:
+                cursor = conn.cursor()
+                
+                # 確保表格存在
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS parking_spaces (
+                        id INTEGER PRIMARY KEY,
+                        is_occupied BOOLEAN DEFAULT FALSE,
+                        license_plate_number VARCHAR(20),
+                        license_plate_color VARCHAR(20),
+                        parking_time TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                
+                # 初始化 4 個停車位
+                for i in range(1, 5):
+                    cursor.execute("""
+                        INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color) 
+                        VALUES (%s, %s, %s, %s) 
+                        ON CONFLICT (id) DO NOTHING;
+                    """, (i, False, None, None))
+                
+                conn.commit()
+                
+                cursor.execute("SELECT * FROM parking_spaces ORDER BY id;")
+                spaces = cursor.fetchall()
+                cursor.close()
+                conn.close()
+                
+                result = []
+                for space in spaces:
+                    result.append({
+                        'id': space['id'],
+                        'is_occupied': space['is_occupied'],
+                        'plate_number': space['license_plate_number']
+                    })
+                return jsonify(result)
+            except Exception as e:
+                print(f"❌ 查詢資料庫時出錯: {e}")
+                print(f"錯誤詳情: {traceback.format_exc()}")
+                conn.close()
+                raise e
         else:
             # 使用記憶體儲存
             result = []
-            for space_id in [1, 2, 3, 4]:
-                if space_id in parking_data:
+            for space_id in range(1, 5):
+                if space_id in parking_data and parking_data[space_id]['is_occupied']:
                     result.append({
                         'id': space_id,
                         'is_occupied': True,
@@ -236,6 +319,8 @@ def get_parking_status():
             return jsonify(result)
         
     except Exception as e:
+        print(f"❌ 處理請求時發生錯誤: {e}")
+        print(f"錯誤詳情: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': f'查詢失敗: {str(e)}'
@@ -257,30 +342,73 @@ def get_my_parking_status():
         
         if conn:
             # 使用資料庫
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM parking_spaces WHERE license_plate_number = %s;", (plate,))
-            space = cursor.fetchone()
-            cursor.close()
-            conn.close()
-            
-            if space:
-                start_time = space['parking_time']
-                current_time = datetime.now()
+            try:
+                cursor = conn.cursor()
                 
-                # 計算停車時間
-                duration = current_time - start_time
-                duration_minutes = int(duration.total_seconds() / 60)
+                # 確保表格存在
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS parking_spaces (
+                        id INTEGER PRIMARY KEY,
+                        is_occupied BOOLEAN DEFAULT FALSE,
+                        license_plate_number VARCHAR(20),
+                        license_plate_color VARCHAR(20),
+                        parking_time TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                conn.commit()
                 
-                # 計算費用
-                fee = calculate_fee(start_time)
+                cursor.execute("SELECT * FROM parking_spaces WHERE license_plate_number = %s;", (plate,))
+                space = cursor.fetchone()
+                cursor.close()
+                conn.close()
                 
-                return jsonify({
-                    'is_parked': True,
-                    'parking_slot': space['id'],
-                    'started_at': start_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'duration_minutes': duration_minutes,
-                    'fee': fee
-                })
+                if space and space['is_occupied']:
+                    start_time = space['parking_time']
+                    if start_time:
+                        current_time = datetime.now()
+                        
+                        # 計算停車時間
+                        duration = current_time - start_time
+                        duration_minutes = int(duration.total_seconds() / 60)
+                        
+                        # 計算費用
+                        fee = calculate_fee(start_time)
+                        
+                        return jsonify({
+                            'is_parked': True,
+                            'parking_slot': space['id'],
+                            'started_at': start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            'duration_minutes': duration_minutes,
+                            'fee': fee
+                        })
+            except Exception as e:
+                print(f"❌ 查詢資料庫時出錯: {e}")
+                print(f"錯誤詳情: {traceback.format_exc()}")
+                conn.close()
+                raise e
+        else:
+            # 使用記憶體儲存
+            for space_id, space in parking_data.items():
+                if space['is_occupied'] and space['plate_number'] == plate:
+                    start_time = space['started_at']
+                    current_time = datetime.now()
+                    
+                    # 計算停車時間
+                    duration = current_time - start_time
+                    duration_minutes = int(duration.total_seconds() / 60)
+                    
+                    # 計算費用
+                    fee = calculate_fee(start_time)
+                    
+                    return jsonify({
+                        'is_parked': True,
+                        'parking_slot': space_id,
+                        'started_at': start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        'duration_minutes': duration_minutes,
+                        'fee': fee
+                    })
         
         # 沒有找到車牌
         return jsonify({
@@ -289,6 +417,8 @@ def get_my_parking_status():
         })
         
     except Exception as e:
+        print(f"❌ 處理請求時發生錯誤: {e}")
+        print(f"錯誤詳情: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': f'查詢失敗: {str(e)}'
@@ -298,11 +428,25 @@ def get_my_parking_status():
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康檢查端點，Render會用這個檢查服務狀態"""
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'uptime': 'running'
-    })
+    try:
+        # 檢查資料庫連接
+        conn = get_db_connection()
+        db_status = "connected" if conn else "disconnected"
+        if conn:
+            conn.close()
+        
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'uptime': 'running',
+            'database': db_status
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        })
 
 @app.errorhandler(404)
 def not_found(error):
