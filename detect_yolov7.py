@@ -147,7 +147,7 @@ def detect(save_img=False):
     if webcam_2:
         regions = "weights/new_pkg.p"                    
     else:
-        regions = "regions.p"     
+        regions = "weights/new_pkg.p"     
     
     with open(regions, 'rb') as f:
         parked_car_boxes = pickle.load(f)

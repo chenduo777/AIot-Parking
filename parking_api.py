@@ -127,127 +127,65 @@ def home():
 
 @app.route('/api/parking/update', methods=['POST'])
 def update_parking_status():
-    """Receive parking space status from Raspberry Pi"""
+    """Receive parking space status from Raspberry Pi, update DB only on change"""
     try:
         data = request.get_json()
-        
+
         if not data or not isinstance(data, list) or len(data) != 4:
             return jsonify({
                 'success': False,
-                'error': 'Invalid data format, must include status data for 4 parking spaces'
+                'error': 'Invalid data format, must include 4 parking spaces'
             }), 400
-        
+
         current_time = datetime.now()
         conn = get_db_connection()
-        
-        if conn:
-            # Using database
-            try:
-                cursor = conn.cursor()
-                
-                # Ensure table exists
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS parking_spaces (
-                        id INTEGER PRIMARY KEY,
-                        is_occupied BOOLEAN DEFAULT FALSE,
-                        license_plate_number VARCHAR(20),
-                        license_plate_color VARCHAR(20),
-                        parking_time TIMESTAMP,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-                """)
-                conn.commit()
-                
-                for space_data in data:
-                    space_id = space_data.get('ID')
-                    is_occupied = space_data.get('IsOccupied', False)
-                    plate_number = space_data.get('LicensePlateNumber', 'None')
-                    plate_color = space_data.get('LicensePlateColor', 'None')
-                    
-                    # Handle empty values
-                    if plate_number == 'None' or not plate_number:
-                        plate_number = None
-                    if plate_color == 'None' or not plate_color:
-                        plate_color = None
-                    
-                    # Check if parking space exists
-                    cursor.execute("SELECT COUNT(*) FROM parking_spaces WHERE id = %s", (space_id,))
-                    if cursor.fetchone()['count'] == 0:
-                        # If it doesn't exist, create it
-                        cursor.execute("""
-                            INSERT INTO parking_spaces 
-                            (id, is_occupied, license_plate_number, license_plate_color, parking_time, created_at, updated_at) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """, (space_id, is_occupied, plate_number, plate_color, 
-                              current_time if is_occupied else None, current_time, current_time))
-                    else:
-                        # Update existing parking space
-                        cursor.execute("""
-                            UPDATE parking_spaces 
-                            SET is_occupied = %s, 
-                                license_plate_number = %s,
-                                license_plate_color = %s,
-                                parking_time = %s,
-                                updated_at = %s
-                            WHERE id = %s;
-                        """, (is_occupied, plate_number, plate_color, 
-                              current_time if is_occupied else None, current_time, space_id))
-                
-                conn.commit()
-                cursor.close()
-                conn.close()
-            except Exception as e:
-                print(f"✗ Database update failed: {e}")
-                print(f"Error details: {traceback.format_exc()}")
-                conn.close()
-                raise e
-        else:
-            # Using memory mode (local development)
-            for space_data in data:
-                space_id = space_data.get('ID')
-                is_occupied = space_data.get('IsOccupied', False)
-                plate_number = space_data.get('LicensePlateNumber', 'None')
-                
-                # Validate space ID
-                if space_id not in [1, 2, 3, 4]:
-                    return jsonify({
-                        'success': False,
-                        'error': f'Invalid parking space ID: {space_id}'
-                    }), 400
-                
-                # Handle empty values
-                if plate_number == 'None' or not plate_number:
-                    plate_number = None
-                
-                # Memory data mode
-                if is_occupied:
-                    parking_data[space_id] = {
-                        'id': space_id,
-                        'plate_number': plate_number,
-                        'started_at': current_time,
-                        'is_occupied': True
-                    }
-                else:
-                    # If space is vacated, remove license plate info or mark as empty
-                    if space_id in parking_data:
-                        parking_data[space_id]['is_occupied'] = False
-                        parking_data[space_id]['plate_number'] = None
-        
+        if not conn:
+            return jsonify({'success': False, 'error': 'DB connection failed'}), 500
+
+        cursor = conn.cursor()
+
+        for space in data:
+            space_id = space.get('ID')
+            is_occupied = space.get('IsOccupied', False)
+            plate_number = space.get('LicensePlateNumber') or None
+            plate_color = space.get('LicensePlateColor') or None
+
+            # 先抓目前資料，確認是否真的變動
+            cursor.execute("SELECT is_occupied, license_plate_number FROM parking_spaces WHERE id = %s", (space_id,))
+            existing = cursor.fetchone()
+
+            if existing and existing['is_occupied'] == is_occupied and existing['license_plate_number'] == plate_number:
+                continue  # 無變動，跳過寫入
+
+            # 計算進入時間（僅在進入時紀錄）
+            parking_time = current_time if is_occupied else None
+
+            # UPSERT
+            cursor.execute("""
+                INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color, parking_time, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    is_occupied = EXCLUDED.is_occupied,
+                    license_plate_number = EXCLUDED.license_plate_number,
+                    license_plate_color = EXCLUDED.license_plate_color,
+                    parking_time = EXCLUDED.parking_time,
+                    updated_at = EXCLUDED.updated_at;
+            """, (space_id, is_occupied, plate_number, plate_color, parking_time, current_time))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
         return jsonify({
             'success': True,
-            'message': 'Parking space status updated successfully',
-            'timestamp': current_time.isoformat(),
-            'storage_mode': 'database' if conn else 'memory'
+            'message': 'DB updated only on status change',
+            'timestamp': current_time.isoformat()
         })
-        
+
     except Exception as e:
-        print(f"✗ Error processing parking status request: {e}")
-        print(f"Error details: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': f'Update failed: {str(e)}'
-        }), 500
+        print(f"✗ Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/parking/status', methods=['GET'])
 def get_parking_status():
@@ -448,6 +386,45 @@ def health_check():
             'error': str(e),
             'timestamp': datetime.now().isoformat()
         })
+    
+@app.route('/api/reset', methods=['POST'])
+def reset_parking_data():
+    """Reset parking_spaces table: truncate + insert 4 initial spaces"""
+    try:
+        # 安全驗證（避免被公開觸發）
+        secret = request.json.get('secret_key')
+        if secret != os.environ.get("RESET_SECRET", "my_dev_key"):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'DB connection failed'}), 500
+
+        cursor = conn.cursor()
+
+        # 清空資料表
+        cursor.execute("TRUNCATE TABLE parking_spaces RESTART IDENTITY;")
+
+        # 初始化四筆資料
+        for i in range(1, 5):
+            cursor.execute("""
+                INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color)
+                VALUES (%s, FALSE, NULL, NULL)
+            """, (i,))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Database has been reset.',
+            'reset_at': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        print(f"✗ Reset error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found(error):

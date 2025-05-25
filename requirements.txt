@@ -1,39 +1,20 @@
-# Flask API 核心套件
 flask==2.3.3
 flask-cors==4.0.0
 gunicorn==21.2.0
-
-# 資料庫連接
 psycopg2-binary>=2.9.0
 pyodbc>=4.0.39
-
-# 修復版本衝突的套件
 numpy>=1.21.0,<2.0.0
 opencv-python==4.8.1.78
-
-# PyTorch 深度學習套件
 torch>=1.9.0
 torchvision>=0.10.0
-
-# 圖像處理和幾何計算
 Pillow>=8.3.0
 shapely>=1.8.0
-
-# 科學計算和繪圖
 matplotlib>=3.5.0
 scipy>=1.7.0
 seaborn>=0.11.0
-
-# 資料處理
 pandas>=1.3.0
-
-# 進度條和實用工具
 tqdm>=4.62.0
 PyYAML>=6.0
 requests>=2.25.0
-
-# 圖像增強 (YOLOv7 可能需要) - 移除以避免版本衝突
-# albumentations>=1.0.0
-
-# 其他可能需要的套件
 pathlib2>=2.3.0; python_version < "3.4"
+tabulate>=0.9.0

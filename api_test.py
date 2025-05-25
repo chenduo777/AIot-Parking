@@ -3,9 +3,13 @@ import requests
 import json
 import time
 import os
+import sys
 
-# API base URL - can be set via environment variable
-BASE_URL = os.environ.get('API_BASE_URL', 'https://parking-management-api-lyvg.onrender.com/api')
+# API base URL - can be set via environment variable or command line argument
+if len(sys.argv) > 1:
+    BASE_URL = sys.argv[1]
+else:
+    BASE_URL = os.environ.get('API_BASE_URL', 'https://parking-management-api-lyvg.onrender.com/api')
 print(f"Using API base URL: {BASE_URL}")
 
 def test_parking_update():
