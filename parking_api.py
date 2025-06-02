@@ -40,7 +40,7 @@ parking_data = {}
 
 def init_database():
     """Initialize database tables"""
-    conn = get_db_connection()
+    conn = get_db_connection()    
     if not conn:
         print("Using memory mode")
         # Initialize memory data
@@ -50,6 +50,7 @@ def init_database():
                 'id': i,
                 'is_occupied': False,
                 'plate_number': None,
+                'plate_color': None,
                 'started_at': None
             }
         return
@@ -139,42 +140,70 @@ def update_parking_status():
 
         current_time = datetime.now()
         conn = get_db_connection()
-        if not conn:
-            return jsonify({'success': False, 'error': 'DB connection failed'}), 500
+        
+        if conn:
+            # Using database
+            cursor = conn.cursor()
 
-        cursor = conn.cursor()
+            for space in data:
+                space_id = space.get('ID')
+                is_occupied = space.get('IsOccupied', False)
+                plate_number = space.get('LicensePlateNumber') or None
+                plate_color = space.get('LicensePlateColor') or None
 
-        for space in data:
-            space_id = space.get('ID')
-            is_occupied = space.get('IsOccupied', False)
-            plate_number = space.get('LicensePlateNumber') or None
-            plate_color = space.get('LicensePlateColor') or None
+                # 先抓目前資料，確認是否真的變動
+                cursor.execute("SELECT is_occupied, license_plate_number FROM parking_spaces WHERE id = %s", (space_id,))
+                existing = cursor.fetchone()
 
-            # 先抓目前資料，確認是否真的變動
-            cursor.execute("SELECT is_occupied, license_plate_number FROM parking_spaces WHERE id = %s", (space_id,))
-            existing = cursor.fetchone()
+                if existing and existing['is_occupied'] == is_occupied and existing['license_plate_number'] == plate_number:
+                    continue  # 無變動，跳過寫入
 
-            if existing and existing['is_occupied'] == is_occupied and existing['license_plate_number'] == plate_number:
-                continue  # 無變動，跳過寫入
+                # 計算進入時間（僅在進入時紀錄）
+                parking_time = current_time if is_occupied else None
 
-            # 計算進入時間（僅在進入時紀錄）
-            parking_time = current_time if is_occupied else None
+                # UPSERT
+                cursor.execute("""
+                    INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color, parking_time, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                        is_occupied = EXCLUDED.is_occupied,
+                        license_plate_number = EXCLUDED.license_plate_number,
+                        license_plate_color = EXCLUDED.license_plate_color,
+                        parking_time = EXCLUDED.parking_time,
+                        updated_at = EXCLUDED.updated_at;
+                """, (space_id, is_occupied, plate_number, plate_color, parking_time, current_time))
 
-            # UPSERT
-            cursor.execute("""
-                INSERT INTO parking_spaces (id, is_occupied, license_plate_number, license_plate_color, parking_time, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (id) DO UPDATE SET
-                    is_occupied = EXCLUDED.is_occupied,
-                    license_plate_number = EXCLUDED.license_plate_number,
-                    license_plate_color = EXCLUDED.license_plate_color,
-                    parking_time = EXCLUDED.parking_time,
-                    updated_at = EXCLUDED.updated_at;
-            """, (space_id, is_occupied, plate_number, plate_color, parking_time, current_time))
+            conn.commit()
+            cursor.close()
+            conn.close()
+        else:
+            # Using memory mode (local development)
+            global parking_data
+            for space in data:
+                space_id = space.get('ID')
+                is_occupied = space.get('IsOccupied', False)
+                plate_number = space.get('LicensePlateNumber') or None
+                plate_color = space.get('LicensePlateColor') or None
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+                # Initialize space if not exists
+                if space_id not in parking_data:
+                    parking_data[space_id] = {
+                        'id': space_id,
+                        'is_occupied': False,
+                        'plate_number': None,
+                        'plate_color': None,
+                        'started_at': None
+                    }
+
+                # Check if status changed
+                if parking_data[space_id]['is_occupied'] == is_occupied and parking_data[space_id]['plate_number'] == plate_number:
+                    continue  # No change, skip
+
+                # Update parking data
+                parking_data[space_id]['is_occupied'] = is_occupied
+                parking_data[space_id]['plate_number'] = plate_number
+                parking_data[space_id]['plate_color'] = plate_color
+                parking_data[space_id]['started_at'] = current_time if is_occupied else None
 
         return jsonify({
             'success': True,
@@ -225,13 +254,13 @@ def get_parking_status():
                 spaces = cursor.fetchall()
                 cursor.close()
                 conn.close()
-                
                 result = []
                 for space in spaces:
                     result.append({
                         'id': space['id'],
                         'is_occupied': space['is_occupied'],
-                        'plate_number': space['license_plate_number']
+                        'plate_number': space['license_plate_number'],
+                        'plate_color': space['license_plate_color']
                     })
                 return jsonify(result)
             except Exception as e:
@@ -247,13 +276,15 @@ def get_parking_status():
                     result.append({
                         'id': space_id,
                         'is_occupied': True,
-                        'plate_number': parking_data[space_id]['plate_number']
+                        'plate_number': parking_data[space_id]['plate_number'],
+                        'plate_color': parking_data[space_id].get('plate_color', 'None')
                     })
                 else:
                     result.append({
                         'id': space_id,
                         'is_occupied': False,
-                        'plate_number': None
+                        'plate_number': None,
+                        'plate_color': None
                     })
             return jsonify(result)
         
@@ -314,10 +345,11 @@ def get_my_parking_status():
                         
                         # Calculate parking fee
                         fee = calculate_fee(start_time)
-                        
                         return jsonify({
                             'is_parked': True,
                             'parking_slot': space['id'],
+                            'license_plate_number': space['license_plate_number'],
+                            'license_plate_color': space['license_plate_color'],
                             'started_at': start_time.strftime('%Y-%m-%d %H:%M:%S'),
                             'duration_minutes': duration_minutes,
                             'fee': fee

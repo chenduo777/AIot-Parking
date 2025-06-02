@@ -15,28 +15,31 @@ print(f"Using API base URL: {BASE_URL}")
 def test_parking_update():
     """Test sending parking status data"""
     print("=== Testing Parking Status Update ===\n")
-    
     # Prepare test data
     test_data = [
         {
             "ID": 1,
             "IsOccupied": True,
-            "LicensePlateNumber": "ABC-1234"
+            "LicensePlateNumber": "ABC-1234",
+            "LicensePlateColor": "White"
         },
         {
             "ID": 2,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         },
         {
             "ID": 3,
             "IsOccupied": True,
-            "LicensePlateNumber": "DEF-5678"
+            "LicensePlateNumber": "DEF-5678",
+            "LicensePlateColor": "Green"
         },
         {
             "ID": 4,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         }
     ]
     
@@ -71,28 +74,31 @@ def test_my_status():
 def test_fee_calculation():
     """Test parking fee calculation"""
     print("=== Testing Fee Calculation ===\n")
-    
-    # Upload test plate data
+      # Upload test plate data
     test_data = [
         {
             "ID": 1,
             "IsOccupied": True,
-            "LicensePlateNumber": "TEST-0001"
+            "LicensePlateNumber": "TEST-0001",
+            "LicensePlateColor": "Blue"
         },
         {
             "ID": 2,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         },
         {
             "ID": 3,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         },
         {
             "ID": 4,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         }
     ]
     
@@ -117,29 +123,32 @@ def test_error_cases():
     response = requests.post(f"{BASE_URL}/parking/update", json=invalid_data)
     print(f"Status code: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}\n")
-    
-    # Test invalid parking space ID
+      # Test invalid parking space ID
     print("2. Testing invalid parking space ID...")
     invalid_data = [
         {
             "ID": 5,  # Invalid ID
             "IsOccupied": True,
-            "LicensePlateNumber": "ABC-1234"
+            "LicensePlateNumber": "ABC-1234",
+            "LicensePlateColor": "Red"
         },
         {
             "ID": 2,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         },
         {
             "ID": 3,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         },
         {
             "ID": 4,
             "IsOccupied": False,
-            "LicensePlateNumber": "None"
+            "LicensePlateNumber": "None",
+            "LicensePlateColor": "None"
         }
     ]
     response = requests.post(f"{BASE_URL}/parking/update", json=invalid_data)
