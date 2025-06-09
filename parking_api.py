@@ -90,25 +90,31 @@ def init_database():
 # Initialize database on application startup
 init_database()
 
-def calculate_fee(start_time):
-    """Calculate parking fee, first 30 minutes free, then $20 per hour"""
+def calculate_fee(start_time, plate_color=None):
+    """Calculate parking fee based on plate color
+    White plate: 1 per 10 seconds after first minute
+    Red/Yellow plate: 2 per 10 seconds after first minute
+    """
     if not start_time:
         return 0
     
-    current_time = datetime.now()
+    current_time = datetime.now() - timedelta(hours=4)
     if isinstance(start_time, str):
         start_time = datetime.fromisoformat(start_time.replace('T', ' '))
     
     duration = current_time - start_time
-    duration_minutes = int(duration.total_seconds() / 60)
+    duration_seconds = int(duration.total_seconds())
     
-    if duration_minutes <= 30:
-        return 0
+    # Calculate billable seconds (after first minute)
+    billable_seconds = duration_seconds - 60
+    
+    # Calculate fee based on plate color
+    if plate_color and (plate_color.lower() == 'red' or plate_color.lower() == 'yellow'):
+        # Red/Yellow plate: 2 per 10 seconds
+        return (billable_seconds // 10) * 2
     else:
-        # After 30 minutes, $20 per hour
-        billable_minutes = duration_minutes - 30
-        hours = (billable_minutes + 59) // 60  # Round up to the next hour
-        return hours * 20
+        # White plate (default): 1 per 10 seconds
+        return billable_seconds // 10
 
 @app.route('/', methods=['GET'])
 def home():
@@ -122,7 +128,7 @@ def home():
             'GET /api/parking/my_status?plate=LICENSE - Query individual parking status'
         ],
         'status': 'running',
-        'current_time': datetime.now().isoformat(),
+        'current_time': (datetime.now() - timedelta(hours=4)).isoformat(),
         'active_parkings': len(parking_data)
     })
 
@@ -138,7 +144,7 @@ def update_parking_status():
                 'error': 'Invalid data format, must include 4 parking spaces'
             }), 400
 
-        current_time = datetime.now()
+        current_time = datetime.now() - timedelta(hours=4)
         conn = get_db_connection()
         
         if conn:
@@ -337,14 +343,14 @@ def get_my_parking_status():
                 if space and space['is_occupied']:
                     start_time = space['parking_time']
                     if start_time:
-                        current_time = datetime.now()
+                        current_time = datetime.now() - timedelta(hours=4)
                         
                         # Calculate parking duration
                         duration = current_time - start_time
                         duration_minutes = int(duration.total_seconds() / 60)
                         
                         # Calculate parking fee
-                        fee = calculate_fee(start_time)
+                        fee = calculate_fee(start_time, space['license_plate_color'])
                         return jsonify({
                             'is_parked': True,
                             'parking_slot': space['id'],
@@ -364,14 +370,14 @@ def get_my_parking_status():
             for space_id, space in parking_data.items():
                 if space['is_occupied'] and space['plate_number'] == plate:
                     start_time = space['started_at']
-                    current_time = datetime.now()
+                    current_time = datetime.now() - timedelta(hours=4)
                     
                     # Calculate parking duration
                     duration = current_time - start_time
                     duration_minutes = int(duration.total_seconds() / 60)
                     
                     # Calculate parking fee
-                    fee = calculate_fee(start_time)
+                    fee = calculate_fee(start_time, space['plate_color'])
                     
                     return jsonify({
                         'is_parked': True,
@@ -408,7 +414,7 @@ def health_check():
         
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': (datetime.now() - timedelta(hours=4)).isoformat(),
             'uptime': 'running',
             'database': db_status
         })
@@ -416,7 +422,7 @@ def health_check():
         return jsonify({
             'status': 'unhealthy',
             'error': str(e),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': (datetime.now() - timedelta(hours=4)).isoformat()
         })
     
 @app.route('/api/reset', methods=['POST'])
@@ -451,7 +457,7 @@ def reset_parking_data():
         return jsonify({
             'success': True,
             'message': 'Database has been reset.',
-            'reset_at': datetime.now().isoformat()
+            'reset_at': (datetime.now() - timedelta(hours=4)).isoformat()
         })
 
     except Exception as e:
