@@ -92,8 +92,8 @@ init_database()
 
 def calculate_fee(start_time, plate_color=None):
     """Calculate parking fee based on plate color
-    White plate: 1 per 10 seconds after first minute
-    Red/Yellow plate: 2 per 10 seconds after first minute
+    White plate: 1 per 10 seconds 
+    Red/Yellow plate: 2 per 10 seconds 
     """
     if not start_time:
         return 0
