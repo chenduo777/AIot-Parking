@@ -105,16 +105,13 @@ def calculate_fee(start_time, plate_color=None):
     duration = current_time - start_time
     duration_seconds = int(duration.total_seconds())
     
-    # Calculate billable seconds (after first minute)
-    billable_seconds = duration_seconds - 60
-    
     # Calculate fee based on plate color
     if plate_color and (plate_color.lower() == 'red' or plate_color.lower() == 'yellow'):
         # Red/Yellow plate: 2 per 10 seconds
-        return (billable_seconds // 10) * 2
+        return (duration_seconds // 10) * 2
     else:
         # White plate (default): 1 per 10 seconds
-        return billable_seconds // 10
+        return duration_seconds // 10
 
 @app.route('/', methods=['GET'])
 def home():
